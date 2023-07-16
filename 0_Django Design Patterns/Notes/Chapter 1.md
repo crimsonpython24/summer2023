@@ -12,11 +12,11 @@
 
 ## Gang of Four (GoF) Design Patterns in Django
 
-| GoF Pattern      | Django Component | Explanation                                                                                                                                |
-| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Command Pattern  | HttpRequest      | Encapsulates a request in an object (hence the name: a command, the request in this case, is returned)                                     |
-| Observer Pattern | Signals          | Listeners are notified ("observers") and updated once one watched object changes state                                                     |
-| Template Pattern | CBV              | Subclassing within an algorithm (the overarching web application) that achieves a specific purpose and does not alter the parent algorithm |
+| GoF Pattern      | Django Component | Explanation                                                                                                              |
+| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Command Pattern  | HttpRequest      | Encapsulates a request in an object (hence the name: a command, the request in this case, is returned)                   |
+| Observer Pattern | Signals          | Listeners are notified ("observers") and updated once one watched object changes state                                   |
+| Template Pattern | CBV              | Subclassing within an algorithm (the overarching web app) that achieves a specific purpose and does not alter the parent |
 
 ## MVC (Model-View-Controller)
 
@@ -25,7 +25,10 @@
   - Model: the data-related logic; e.g., data transferred between view and controller (generally, the type of data that exists in an API)
   - View: UI logic (buttons, boxes, etc.)
   - Controller: handles incoming requests and renders the final output using data from the model
+    > Model updates view, user sees view, user uses controller, controller manipulates model, and so on
 - Django utilizes the **Model-Template-View** (MTV) architecture; the names match the corresponding Django application feature/component
+  - Each request of a webpage is indepdent from other requests due to HTTP's nature
+  - Docs: "a 'view' is the Python callback function for a particular URL" and not necessarily how the data looks
 
 ## Fowler Design Patterns in Django
 
