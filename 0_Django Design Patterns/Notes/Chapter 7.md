@@ -7,7 +7,7 @@
 3. Submitted form with errors (bound but not a valid form)
 4. Submitted form without errors (bound and valid form)
 
-The code in the following sections assume that `form_class` is already existent in the view class; remember to specify such an attribute in real code
+**Note** The code in the following sections assume that `form_class` is already existent in the view class; remember to specify such an attribute in real code.
 
 ### Process
 
@@ -15,13 +15,13 @@ The code in the following sections assume that `form_class` is already existent 
   - Forms defined with `method=GET` sents form data in the URL itself; only used to retrieve data
   - Forms defined with `method=POST` has form data sent along with the HTTP request, not seen by the user (e.g., creating or updating data)
 
-```
+```python
 class PersonDetailsForm(forms.Form):
   name = forms.CharField(max_length=100)
   age = forms.IntegerField()
 ```
 
-```
+```python
 class ClassBasedFormView(generic.View):
   template_name = 'form.html'
   def get(self, request):
@@ -43,7 +43,7 @@ I.e., every form instance has the attribute `fields`, a dictionary that contains
 This example illustrates a case when an argument named "upgrade" will add a checkbox to a user details form.
 In the `forms.py` file:
 
-```
+```python
 class PersonDetailsForm(forms.Form):
   name = forms.CharField(max_length=100)
   age = forms.IntegerField()
@@ -57,7 +57,7 @@ class PersonDetailsForm(forms.Form):
 
 Either directly call `PersonDetailsForm(upgrade=True)`, or do
 
-```
+```python
 class PersonDetailsEdit(generic.FormView):
   def get_form_kwargs(self):
     kwargs = super().get_form_kwargs()
@@ -65,13 +65,13 @@ class PersonDetailsEdit(generic.FormView):
     return kwargs
 ```
 
-This pattern can also be implemented in user-based forms, i.e., when a form is only visible to a certain group of users
+This pattern can also be implemented in user-based forms, i.e., when a form is only visible to a certain group of users.
 
 ### Example: Multiple Form Actions Per View
 
 While using the same view for separate actions, it's possible to identify which form's values are submitted based on the `submit` button's name, such as through the `append` method below:
 
-```
+```python
 class SubscribeForm(forms.Form):
   email = forms.EmailField()
   def __init__(self, *args, **kwargs):
@@ -80,7 +80,7 @@ class SubscribeForm(forms.Form):
     self.helper.layout.append(Submit('subscribe_butn', 'Subscribe'))
 ```
 
-```
+```python
 class NewsletterView(generic.TemplateView):
   subcribe_form_class = SubscribeForm
   unsubcribe_form_class = UnSubscribeForm
@@ -95,7 +95,7 @@ Where `setdefault` is a default python function that changes the value of a key-
 
 As the forms enter the template context as keyword arguments, they will be returned as a part of `request.POST` once any of the two forms is submitted:
 
-```
+```python
 def post(self, request, *args, **kwargs):
   form_args = {
     'data': self.request.POST,
@@ -122,7 +122,7 @@ These views are a part of Django's generic views (`generic.[*]View`).
 
 --> simple solution: call the `.cleaned_data` attribute
 
-```
+```python
 >>> fill = {"name": "Blitz", "age": "30"}
 >>> g = PersonDetailsForm(fill)
 >>> g.is_valid()

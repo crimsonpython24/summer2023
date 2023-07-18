@@ -6,7 +6,7 @@
 
 HTTP methods that are not explicitly defined/inherited in the method will not be included
 
-```
+```python
 class HelloView(View):
   def get(self, request, name="World"):
     return HttpResponse("Hello {}!".format(name))
@@ -14,7 +14,7 @@ class HelloView(View):
 path('hello-cl/', views.HelloView.as_view()),
 ```
 
-```
+```bash
 >>> from django.test import Client
 >>> c = Client()
 >>> c.get("http://0.0.0.0:8000/hello-cl/").content
@@ -62,7 +62,7 @@ b''
 
 In cases where code expressions are preferable (e.g., clarity, readability), it is recommended to write the mixin instead of using a stock decorator
 
-```
+```python
 class LoginRequiredMixin:
   def dispatch(self, request, *args, **kwargs):
     if not request.user.is_authenticated():
@@ -72,7 +72,7 @@ class LoginRequiredMixin:
 
 Mixins may be utilized in cases like:
 
-```
+```python
 class UserProfileView(LoginRequiredMixin, DetailView):
   # This view will be seen only if you are logged-in
   pass
@@ -83,7 +83,7 @@ class LoginFormView(AnonymousRequiredMixin, FormView):
 
 Or rather, customize such a mixin if desired:
 
-```
+```python
 class CheckOwnerMixin:
   def get_object(self, queryset=None):
     obj = super().get_object(queryset)
@@ -99,7 +99,7 @@ class CheckOwnerMixin:
 
 Think of it as service objects, but for views instead of models
 
-```
+```python
 class FeedMixin(object):
   def get_context_data(self, **kwargs):
     context = super().get_context_data(**kwargs)
@@ -121,7 +121,7 @@ Always name your Django URLs so that they can be reverse-searched in the Django 
 
 Test for parameters' values as such:
 
-```
+```python
 # pattern: `year/<int:year>/`
 class YearView(View):
   def get(self, request, year):
@@ -136,7 +136,7 @@ class YearView(View):
 
 ### Namespaces
 
-```
+```bash
 >>> from django.urls import reverse
 >>> reverse("hello_fn")
 /hello-fn/

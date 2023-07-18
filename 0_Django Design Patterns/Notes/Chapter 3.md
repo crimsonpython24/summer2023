@@ -135,7 +135,7 @@ This is to resolve the case where models have the same fields/methods duplicated
 
 **Concrete (multi-table) inheritance**: each object maps to their own database tables; an implicit join is needed each time the **base** fields are accessed
 
-```
+```python
 class Location(models.Model):
   name = models.CharField(max_length=50)
   address = models.CharField(max_length=80)
@@ -147,7 +147,7 @@ class Restaurant(Location):
 
 **Proxy inheritance**: only adds new behavior to the parent class
 
-```
+```python
 class Book(models.Model):
   title = models.CharField(max_length=30)
   author = models.CharField(max_length=30)
@@ -160,7 +160,7 @@ class MyBook(Book):
 
 **Abstract inheritance**: uses the special Abstract base class to share data and behavior among models; does not create corresponding tables in the database and do not need a join statement
 
-```
+```python
 class VehicleInfo(models.Model):
   name = models.CharField(max_length=20)
   color = models.CharField(max_length=20)
@@ -185,7 +185,7 @@ Mixins should be easily composable and not violating the single-responsibility p
 - Either a field must be nullable, or they should contain a default value to prevent database errors
 - Once a instance is created and needs another function, e.g. creating a profile, put the handler in `signals.py` instead of also putting it in the models
 
-```
+```python
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_profile_handler(sender, instance, created, **kwargs):
   if not created:
@@ -195,7 +195,7 @@ def create_profile_handler(sender, instance, created, **kwargs):
   profile.save()
 ```
 
-```
+```python
 # apps.py
 class ProfilesConfig(AppConfig):
   name = "profiles"
@@ -204,7 +204,7 @@ class ProfilesConfig(AppConfig):
     from . import signals
 ```
 
-```
+```python
 # settings.py
 INSTALLED_APPS = [
   'profiles.apps.ProfilesConfig',
@@ -215,7 +215,7 @@ INSTALLED_APPS = [
 
 The most common way is to use abstract classes to separate concerns, and extend all the abstract classes into a concrete class
 
-```
+```python
 class BaseProfile(models.Model):
   # ...
   class Meta:
@@ -251,7 +251,7 @@ class Profile(BaseProfile, ProfileTypeOne, ProfileTypeTwo):
 
 From this:
 
-```
+```python
 class Profile(models.Model):
   ...
   def is_superhero(self):
@@ -262,7 +262,7 @@ class Profile(models.Model):
 
 Into this:
 
-```
+```python
 # services.py
 API_URL = "http://api.herocheck.com/?q={0}"
 class SuperHeroWebAPI:
@@ -272,7 +272,7 @@ class SuperHeroWebAPI:
     return webclient.get(url)
 ```
 
-```
+```python
 # models.py
 from .services import SuperHeroWebAPI
   def is_superhero(self):
@@ -288,7 +288,7 @@ They are also preferably self-contained, which allows them to be tested without 
 
 From this:
 
-```
+```python
 class BaseProfile(models.Model):
   birthdate = models.DateField()
   # ...
@@ -303,7 +303,7 @@ class BaseProfile(models.Model):
 
 Into:
 
-```
+```python
 @property
 def age(self):
   # ...
@@ -320,7 +320,7 @@ Adding on top of `property`, you can also cache calculations which:
 1. does not change within an instance once it has finished calculating
 2. are expensive to calculate or format
 
-```
+```python
 @cached_property
 def function(self):
   # Expensive operation e.g. external service call
@@ -332,7 +332,7 @@ Where the cached value is stored within the python instance's memory
 
 This is required when certain queries or models are defined and accessed repeatedly, and that might need to be chained with other filters.
 
-```
+```python
 # managers.py
 class PostQuerySet(QuerySet):
   def public_posts(self):
@@ -340,7 +340,7 @@ class PostQuerySet(QuerySet):
 PostManager = PostQuerySet.as_manager
 ```
 
-```
+```python
 # models.py
 class Post(Postable):
   # ...

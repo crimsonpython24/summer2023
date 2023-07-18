@@ -8,7 +8,7 @@ Always remember to register the model using `admin.site.register`.
 
 The admin view can be customized as such:
 
-```
+```python
 # admin.py
 class SightingAdmin(admin.ModelAdmin):
   list_display = ('superhero', 'power', 'location', 'sighted_on')
@@ -19,7 +19,7 @@ class SightingAdmin(admin.ModelAdmin):
 
 Some of the fields may also be set in the `Meta` subclass within a model, such as:
 
-```
+```python
 # models.py
 class Sighting(models.Model):
   class Meta:
