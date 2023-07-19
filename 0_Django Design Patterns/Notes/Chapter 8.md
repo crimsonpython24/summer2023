@@ -293,9 +293,9 @@ Channels are made for handling asynchronous requests
 <link rel="stylesheet" href="{% static 'css/one-style.css' %}?{% now 'U' %}" />
 
 <div class="container">
-	<div class="chart">
-		<canvas id="iot-chart" width="800" height="400"></canvas>
-	</div>
+  <div class="chart">
+    <canvas id="iot-chart" width="800" height="400"></canvas>
+  </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
 <script src="{% static 'js/two.js' %}"></script>
@@ -389,51 +389,51 @@ ws_urlpatterns = [
 {% include 'base.html' %} {% load static %} {% block content%}
 <link rel="stylesheet" href="{% static 'css/chat-style.css' %}?{% now 'U' %}" />
 <div>
-	<div class="container">
-		<div class="row d-flex justify-content-center">
-			<div class="col-6">
-				<form>
-					<div class="form-group">
-						<label for="textarea1" class="h4 pt-5"
-							>Chatroom - {{room_name}}</label
-						>
-						<textarea class="form-control" id="chat-text" rows="10"></textarea>
-					</div>
-					<div class="form-group">
-						<input class="form-control" id="input" type="text" /><br />
-					</div>
-					<input
-						class="btn btn-success btn-lg btn-block"
-						id="submit"
-						type="button"
-						value="Send"
-					/>
-				</form>
-			</div>
-		</div>
-	</div>
+  <div class="container">
+    <div class="row d-flex justify-content-center">
+      <div class="col-6">
+        <form>
+          <div class="form-group">
+            <label for="textarea1" class="h4 pt-5"
+              >Chatroom - {{room_name}}</label
+            >
+            <textarea class="form-control" id="chat-text" rows="10"></textarea>
+          </div>
+          <div class="form-group">
+            <input class="form-control" id="input" type="text" /><br />
+          </div>
+          <input
+            class="btn btn-success btn-lg btn-block"
+            id="submit"
+            type="button"
+            value="Send"
+          />
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 {{room_name|json_script:"room-name"}}
 {{request.user.username|json_script:"username"}}
 <script>
-	const userName = JSON.parse(document.getElementById('username').textContent);
-	const roomName = JSON.parse(document.getElementById('room-name').textContent);
-	document.querySelector('#submit').onclick = function (e) {
-		const msgInput = document.querySelector('#input');
-		const message = msgInput.value;
-		chatSocket.send(JSON.stringify({ message: message, username: userName }));
-		msgInput.value = '';
-	};
+  const userName = JSON.parse(document.getElementById('username').textContent);
+  const roomName = JSON.parse(document.getElementById('room-name').textContent);
+  document.querySelector('#submit').onclick = function (e) {
+    const msgInput = document.querySelector('#input');
+    const message = msgInput.value;
+    chatSocket.send(JSON.stringify({ message: message, username: userName }));
+    msgInput.value = '';
+  };
 
-	const chatSocket = new WebSocket(
-		'ws://' + window.location.host + '/ws/chat/' + roomName + '/'x
-	);
+  const chatSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/chat/' + roomName + '/'x
+  );
 
-	chatSocket.onmessage = function (event) {
-		const data = JSON.parse(event.data);
-		document.querySelector('#chat-text').value +=
-			data.username + ': ' + data.message + '\n';
-	};
+  chatSocket.onmessage = function (event) {
+    const data = JSON.parse(event.data);
+    document.querySelector('#chat-text').value +=
+      data.username + ': ' + data.message + '\n';
+  };
 </script>
 {% endblock %}
 ```
