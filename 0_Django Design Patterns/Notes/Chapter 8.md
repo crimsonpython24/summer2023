@@ -268,3 +268,201 @@ _Global interpreter lock (GIL)_: cannot run more than one thread of the Python i
    maps incoming messages to a consumer rather than a view.
 
 > A consumer is an event handler that reacts to events, e.g., sending messages back to the browser; it can be both (a)synchronous, but should not mix the two
+
+### When to Use Channels
+
+Channels are made for handling asynchronous requests
+
+- The Django uses a request-response model, which is significantly limited (i.e., for one to receive a response, there must be a request to initiate the one-time handshake)
+- Channels came with WebSocket support and allows building applications around WebSockets
+  - The process begins with an HTTP request to open up a WebSocket connection, and a successful response will upgrade the connection to WS
+  - As long as the connection is open, both parties can communicate with each other independently
+  - The connection is **stateful**, meaning that it will stay alive until terminated by one of the parties
+- Multiple clients can send and receive data via WebSocket without browser refreshing, where Channels is also integrated with Django's authentication system
+- I.e., Channels passes messages between the client and the server and handles WebSocket requests
+
+### Channels vs Celery
+
+- Celery is an asynchronous task/job queue and is focused on queuing tasks and scheduling them to run at specific intervals (all while running in the background)
+- Channels use cases: real-time chat, multiplayer game, sending notifications; Celery use cases: processing videos/images, sending out bulk emails
+
+### Example: Real-time Graph Update [Source](https://levelup.gitconnected.com/step-by-step-django-channels-b17a58141de1)
+
+```html
+{% include 'base.html' %} {% block content%} {% load static %}
+<link rel="stylesheet" href="{% static 'css/one-style.css' %}?{% now 'U' %}" />
+
+<div class="container">
+	<div class="chart">
+		<canvas id="iot-chart" width="800" height="400"></canvas>
+	</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+<script src="{% static 'js/two.js' %}"></script>
+{% endblock %}
+```
+
+```python
+# business.py
+class DomainTwo:
+  def do(self):
+    value = random.randint(0,100)
+    return json.dumps({'data': value})
+```
+
+```python
+# routing.py
+ws_urlpatterns = [
+  path('ws/two_url/', TwoConsumer.as_asgi())
+]
+```
+
+```python
+# urls.py
+urlpatterns = [
+  path('two/', two),
+]
+```
+
+```python
+#views.py
+def two(request):
+  return render(request, './templates/two.html')
+```
+
+```python
+# consumers.py
+from channels.generic.websocket import AsyncWebsocketConsumer
+from asyncio import sleep
+
+class TwoConsumer(AsyncWebsocketConsumer):
+  async def connect(self):
+    await self.accept()
+    D = DomainTwo()
+    for i in range(100):
+      data = D.do()
+      await self.send(data)
+      await sleep(2)
+```
+
+```python
+# settings.py
+CHANNEL_LAYERS = {
+  'default' : {
+    'BACKEND' : 'channels_redis.core.RedisChannelLayer',
+    'CONFIG': {
+      'hosts':[('127.0.0.1', 6739)]
+    }
+  }
+}
+```
+
+### Example: Chatroom App
+
+```python
+# urls.py
+urlpatterns = [
+  path('chat/', chat, name='chat_index'),
+  path('chat/<str:room_name>/', room, name="chat_room"),
+]
+```
+
+```python
+# views.py
+def chat(request):
+  return render(request, './templates/threechat.html', context={})
+
+def room(request, room_name):
+  return render(request, './templates/threeroom.html', context={'room_name': room_name})
+```
+
+```python
+# routing.py
+ws_urlpatterns = [
+    re_path(r'ws/chat/(?P<room_name>\w+)/$', RoomConsumer.as_asgi())
+]
+```
+
+`w+` will match everything that comes after `chat/` and passed to the consumer
+
+```html
+{% include 'base.html' %} {% load static %} {% block content%}
+<link rel="stylesheet" href="{% static 'css/chat-style.css' %}?{% now 'U' %}" />
+<div>
+	<div class="container">
+		<div class="row d-flex justify-content-center">
+			<div class="col-6">
+				<form>
+					<div class="form-group">
+						<label for="textarea1" class="h4 pt-5"
+							>Chatroom - {{room_name}}</label
+						>
+						<textarea class="form-control" id="chat-text" rows="10"></textarea>
+					</div>
+					<div class="form-group">
+						<input class="form-control" id="input" type="text" /><br />
+					</div>
+					<input
+						class="btn btn-success btn-lg btn-block"
+						id="submit"
+						type="button"
+						value="Send"
+					/>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+{{room_name|json_script:"room-name"}}
+{{request.user.username|json_script:"username"}}
+<script>
+	const userName = JSON.parse(document.getElementById('username').textContent);
+	const roomName = JSON.parse(document.getElementById('room-name').textContent);
+	document.querySelector('#submit').onclick = function (e) {
+		const msgInput = document.querySelector('#input');
+		const message = msgInput.value;
+		chatSocket.send(JSON.stringify({ message: message, username: userName }));
+		msgInput.value = '';
+	};
+
+	const chatSocket = new WebSocket(
+		'ws://' + window.location.host + '/ws/chat/' + roomName + '/'x
+	);
+
+	chatSocket.onmessage = function (event) {
+		const data = JSON.parse(event.data);
+		document.querySelector('#chat-text').value +=
+			data.username + ': ' + data.message + '\n';
+	};
+</script>
+{% endblock %}
+```
+
+```python
+# consumers.py
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+class RoomConsumer(AsyncWebsocketConsumer):
+  async def connect(self):
+    self.room_name = self.scope['url_route']['kwargs']['room_name']
+    self.room_group_name = 'chat_%s' % self.room_name
+    await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+    await self.accept()
+
+  async def disconnect(self, code):
+    await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+  async def receive(self, text_data):
+    text_data_json = json.loads(text_data)
+    message = text_data_json['message']
+    username = text_data_json['username']
+    await self.channel_layer.group_send(self.room_group_name, {'type':'chatroom_message','message':message, 'username':username})
+
+  async def chatroom_message(self, event):
+    message = event['message']
+    username = event['username']
+    await self.send(text_data=json.dumps({'message':message, 'username':username}))
+```
+
+There is a `chat_` prefix in front of group names and add them to channel layers, so that there will be different chatrooms to which the same messages are shared.
+Each user will join such different rooms.
