@@ -1,5 +1,71 @@
 {
+  "json.schemaDownload.enable": true,
+
   "[markdown]": {
     "editor.wordWrap": "off"
-  }
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": false,
+    "source.fixAll.eslint": false,
+    "source.sortImports": true
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.fontSize": 14,
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.guides.bracketPairs": true,
+  "editor.guides.bracketPairsHorizontal": true,
+  "editor.insertSpaces": true,
+  "editor.linkedEditing": true,
+  "editor.multiCursorModifier": "ctrlCmd",
+  "editor.tabSize": 2,
+  "editor.wordWrap": "off",
+  "explorer.confirmDelete": false,
+  "javascript.preferences.quoteStyle": "single",
+  "telemetry.telemetryLevel": "off",
+  "terminal.integrated.fontFamily": "SauceCodePro Nerd Font",
+  "terminal.integrated.fontSize": 14,
+  "update.mode": "manual",
+  "workbench.colorTheme": "One Dark Pro Darker",
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.startupEditor": "none",
+
+  "eslint.enable": true,
+  "eslint.codeAction.disableRuleComment": {
+    "enable": true,
+    "commentStyle": "line",
+    "location": "sameLine"
+  },
+  "eslint.codeActionsOnSave.mode": "all",
+  "eslint.format.enable": false,
+  "eslint.lintTask.enable": false,
+  "eslint.probe": [
+    "html",
+    "javascript",
+    "javascriptreact",
+    "markdown",
+    "typescript",
+    "typescriptreact",
+    "vue"
+  ],
+  "eslint.problems.shortenToSingleLine": true,
+  "eslint.run": "onType",
+
+  "gitlens.telemetry.enabled": false,
+
+  "prettier.arrowParens": "avoid",
+  "prettier.bracketSameLine": false,
+  "prettier.bracketSpacing": true,
+  "prettier.endOfLine": "lf",
+  "prettier.jsxSingleQuote": true,
+  "prettier.quoteProps": "as-needed",
+  "prettier.semi": true,
+  "prettier.singleAttributePerLine": false,
+  "prettier.singleQuote": true,
+  "prettier.tabWidth": 2,
+  "prettier.trailingComma": "es5",
+  "prettier.useTabs": false,
+
+  "vscode-postgres.prettyPrintJSONfields": true,
+  "vscode-postgres.tableColumnSortOrder": "alpha"
 }
