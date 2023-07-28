@@ -48,7 +48,6 @@ Context is a method to pass value from a parent to a child component without usi
 - There can be multiple providers that provide different values.
 - Providers can be nested, and a **consumer** component (a component that uses the `useContext` hook) will pick the closest provider in the
   component tree to get the context value.
--
 
 ```jsx
 const ColorContext = createContext('black');
@@ -346,4 +345,331 @@ const App = () => (
     </Count2Provider>
   </Count1Provider>
 );
+```
+
+### Propagating with Multiple Contexts
+
+> Create a single state and use multiple Contexts to distribute the state in pieces
+
+```jsx
+type Action = { type: 'INC1' } | { type: 'INC2' };
+const Count1Context = createContext < number > 0;
+const Count2Context = createContext < number > 0;
+const DispatchContext = createContext < Dispatch < Action >> (() => {});
+```
+
+If there are more counts, then there will be more contexts, but still only one `DispatchContext`
+
+```jsx
+const Counter1 = () => {
+  const count1 = useContext(Count1Context);
+  const dispatch = useContext(DispatchContext);
+  return (
+    <div>
+      Count1: {count1}
+      <button onClick={() => dispatch({ type: 'INC1' })}>+1</button>
+    </div>
+  );
+};
+const Counter2 = () => {
+  // ...
+};
+```
+
+`Counter1` reads `count1` from `Count1Context`, but both counters will read from the same dispatch context.
+
+The parent is still the same:
+
+```jsx
+const Parent = () => (
+  <>
+    <Counter1 />
+    <Counter2 />
+  </>
+);
+```
+
+```jsx
+const Provider = ({ children }: { children: ReactNode }) => {
+  const [state, dispatch] = useReducer(
+    (prev: { count1: number, count2: number }, action: Action) => {
+      if (action.type === 'INC1') {
+        return { ...prev, count1: prev.count1 + 1 };
+      }
+      if (action.type === 'INC2') {
+        return { ...prev, count2: prev.count2 + 1 };
+      }
+      throw new Error('no matching action');
+    },
+    {
+      count1: 0,
+      count2: 0,
+    }
+  );
+  return (
+    <DispatchContext.Provider value={dispatch}>
+      <Count1Context.Provider value={state.count1}>
+        <Count2Context.Provider value={state.count2}>
+          {children}
+        </Count2Context.Provider>
+      </Count1Context.Provider>
+    </DispatchContext.Provider>
+  );
+};
+```
+
+The `useReducer` hook serves a similar purpose to `useState`, but gives a more organized approach for updating non-primitive values. In this case, as
+there is an object whose keys should be updated independently, `useReducer` will be a better hook to initialize the state.
+
+There are two required arguments for a reducer:
+
+1. `reducer`: a pure function that takes a state, and returns a new state based on the previous state and an action
+2. `initialState`: an initial state value like those in `useState`
+
+And the application wrapper is simplified:
+
+```jsx
+const App = () => (
+  <Provider>
+    <Parent />
+  </Provider>
+);
+```
+
+## Best Practices
+
+### Creating Custom Hooks and Providers
+
+Creating a custom hook and provider will allow one to hide Contexts, as custom cooks can directly access Context values and provider components.
+
+The first thing to do is to create a Context, which is `null` in this example; this also signals that the default value cannot be used, and that values
+should always be accessed through a provider.
+
+```jsx
+type CountContextType = [number, Dispatch<SetStateAction<number>>];
+const Count1Context = (createContext < CountContextType) | (null > null);
+```
+
+The `Count1Provider` then creates a state with `useState` and passes it to the Context provider.
+
+```jsx
+export const Count1Provider = ({ children }: { children: ReactNode }) => (
+  <Count1Context.Provider value={useState(0)}>
+    {children}
+  </Count1Context.Provider>
+);
+
+// Note that value={useState(0)} is an abbreviation for:
+const [count, setCount] = useState(0);
+return <Count1Context.Provider value={[count, setCount]}>
+```
+
+The `useCount1` hook is then defined to return a value from `Count1Context`:
+
+```jsx
+export const useCount1 = () => {
+  const value = useContext(Count1Context);
+  if (value === null) throw new Error('Provider missing');
+  return value;
+};
+```
+
+Finally, the `Counter1` component is created to use the `count1` state using the `useCount1()` hook that is defined:
+
+```jsx
+const Counter1 = () => {
+  const [count1, setCount1] = useCount1();
+  return (
+    <div>
+      Count1: {count1}
+      <button onClick={() => setCount1(c => c + 1)}>+1</button>
+    </div>
+  );
+};
+
+const Parent = () => (
+  <div>
+    <Counter1 />
+    <Counter2 />
+  </div>
+);
+
+const App = () => (
+  <Count1Provider>
+    <Count2Provider>
+      <Parent />
+    </Count2Provider>
+  </Count1Provider>
+);
+```
+
+### Factory Pattern with a Custom Hook (TypeScript-only)
+
+As creating a custom hook and provider component can be repetitive, one can write a function that does the task.
+
+This example shows `createStateContext`: it takes a `useValue` custom hook; if one uses `useState`, the context returns a tuple of the `state` value
+and the `setState` function (i.e., `createStateContext` returns a tuple of a provider and a custom hook to get the state). This Context also provides
+an optional choice to pass an `initialValue` prop into `useValue` so that one can set an initial value at runtime instead of at creation.
+
+```jsx
+const createStateContext = () => {
+  const StateContext = createContext(null);
+  const StateProvider = ({ initialValue, children }) => (
+    <StateContext.Provider value={useValue(initialValue)}>
+      {children}
+    </StateContext.Provider>
+  );
+  const useContextState = () => {
+    const value = useContext(StateContext);
+    if (value === null) throw new Error('Provider missing');
+    return value;
+  };
+  return [StateProvider, useContextState];
+};
+```
+
+```jsx
+const useNumberState = init => useState(init || 0);
+```
+
+This custom hook takes an optional `init` parameter, which will be used with `useState` and `init`:
+
+```jsx
+const [Count1Provider, useCount1] = createStateContext(useNumberState);
+const [Count2Provider, useCount2] = createStateContext(useNumberState);
+```
+
+With this code, one can avoid repetitions while defining custom hooks. Finally, the Counter can be defined as such:
+
+```jsx
+const Counter1 = () => {
+  const [count1, setCount1] = useCount1();
+  return (
+    <div>
+      Best practices for using Context 69 Count1: {count1}
+      <button onClick={() => setCount1(c => c + 1)}>+1</button>
+    </div>
+  );
+};
+
+const Counter2 = () => {
+  // ...
+};
+
+const Parent = () => (
+  <div>
+    <Counter1 />
+    <Counter2 />
+  </div>
+);
+
+const App = () => (
+  <Count1Provider>
+    <Count2Provider>
+      <Parent />
+    </Count2Provider>
+  </Count1Provider>
+);
+```
+
+One can also make a custom hook with `useReducer`:
+
+```jsx
+const useMyState = (initialState = { count1: 0, count2: 0 }) => {
+  const [state, setState] = useState(initialState);
+  useEffect(() => {
+    console.log('updated', state);
+  });
+  const inc1 = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      count1: prev.count1 + 1,
+    }));
+  }, []);
+  const inc2 = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      count2: prev.count2 + 1,
+    }));
+  }, []);
+  return [state, { inc1, inc2 }];
+};
+```
+
+This more complicated version of the `useNumberState` allows for custom action functions and logging in the console through `useEffect`.
+
+This following rewrite implements a stricter type-checking:
+
+```tsx
+const createStateContext = <Value, State>(
+  useValue: (init?: Value) => State
+) => {
+  const StateContext = createContext<State | null>(null);
+  const StateProvider = ({
+    initialValue,
+    children,
+  }: {
+    initialValue?: Value;
+    children?: ReactNode;
+  }) => (
+    <StateContext.Provider value={useValue(initialValue)}>
+      {children}
+    </StateContext.Provider>
+  );
+  const useContextState = () => {
+    const value = useContext(StateContext);
+    if (value === null) {
+      throw new Error('Provider missing');
+    }
+    return value;
+  };
+  return [StateProvider, useContextState] as const;
+};
+const useNumberState = (init?: number) => useState(init || 0);
+```
+
+> The code snippets above is in TS, as `useValue` is a CoreTS hook. There are also type-checking involved in this stricter definition.
+
+### Avoiding Provider Nesting
+
+From this:
+
+```jsx
+const [Count1Provider, useCount1] = createStateContext(useNumberState);
+const [Count2Provider, useCount2] = createStateContext(useNumberState);
+const [Count3Provider, useCount3] = createStateContext(useNumberState);
+const [Count4Provider, useCount4] = createStateContext(useNumberState);
+const [Count5Provider, useCount5] = createStateContext(useNumberState);
+
+const App = () => (
+  <Count1Provider initialValue={10}>
+    <Count2Provider initialValue={20}>
+      <Count3Provider initialValue={30}>
+        <Count4Provider initialValue={40}>
+          <Count5Provider initialValue={50}>
+            <Parent />
+          </Count5Provider>
+        </Count4Provider>
+      </Count3Provider>
+    </Count2Provider>
+  </Count1Provider>
+);
+```
+
+Into this:
+
+```jsx
+const App = () => {
+  const providers = [
+    [Count1Provider, { initialValue: 10 }],
+    [Count2Provider, { initialValue: 20 }],
+    [Count3Provider, { initialValue: 30 }],
+    [Count4Provider, { initialValue: 40 }],
+    [Count5Provider, { initialValue: 50 }],
+  ];
+  return providers.reduceRight(
+    (children, [Component, props]) => createElement(Component, props, children),
+    <Parent />
+  );
+};
 ```
