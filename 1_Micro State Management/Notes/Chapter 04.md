@@ -131,18 +131,40 @@ const createStore = initialState => {
   const callbacks = new Set();
   const getState = () => state;
   const setState = nextState => {
-    state = typeof nextState === 'function' ? nextState(state) : nextState;
-    callbacks.forEach(callback => callback());
+    state = typeof nextState === 'function' ? nextState(state) : nextState; // [2]
+    callbacks.forEach(callback => callback()); // [1]
   };
   const subscribe = callback => {
     callbacks.add(callback);
     return () => {
-      callbacks.delete(callback);
+      callbacks.delete(callback); // [3]
     };
   };
   return { getState, setState, subscribe };
 };
 ```
+
+For this code segment, the list of callbacks are stored in the `callbacks` set; when `setState` is invoked, each of the callback functions that are
+"watched" will be called in `[1]`. I.e., the functions that are watched in the `callbacks` set will be executed when `setState` is called because
+`setState` should update all the watched components that are added through the `subscribe` method.
+
+In `[2]`, the state will be altered depending on the type of parameter `setState` is called. If `setState` is called with a function in the brackets,
+then the `state` variable will be updated with a function; otherwise, the `state` variable will just be replaced with another value if the parameter
+is not a function.
+
+The expectation for `[3]` is that it will return an unsubscribe function. It is called when the snippet loads (so it will load four times); when
+this function is used without the `unsubscribe` part:
+
+```jsx
+store.subscribe(() => {
+  setState(selector(store.getState()));
+});
+```
+
+Then no values will be deleted, and the return statement would not be invoked. However, if `unsubscribe` is called as a return value, then the code
+segment will be executed. Think of `[3]` as, when called with a return value, a temporary method that will push the function callback into the `callbacks`
+set and removed once the component has finished loading. When the action is dispatched after the state was updated, the store subscription will become
+active, and remember to unsubscribe.
 
 Which can be used as:
 
