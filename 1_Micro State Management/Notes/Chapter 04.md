@@ -131,8 +131,8 @@ const createStore = initialState => {
   const callbacks = new Set();
   const getState = () => state;
   const setState = nextState => {
-    state = typeof nextState === 'function' ? nextState(state) : nextState; // [2]
-    callbacks.forEach(callback => callback()); // [1]
+    state = typeof nextState === 'function' ? nextState(state) : nextState; // [1]
+    callbacks.forEach(callback => callback()); // [2]
   };
   const subscribe = callback => {
     callbacks.add(callback);
@@ -144,29 +144,23 @@ const createStore = initialState => {
 };
 ```
 
+In `[1]`, the state will be altered depending on the type of parameter `setState` is called. If `setState` is called with a function in the brackets,
+then the `state` variable will be updated with a function; otherwise, the `state` variable will just be replaced with another value (`nextState`) if
+the parameter is not a function.
+
 For this code segment, the list of callbacks are stored in the `callbacks` set; when `setState` is invoked, each of the callback functions that are
-"watched" will be called in `[1]`. I.e., the functions that are watched in the `callbacks` set will be executed when `setState` is called because
-`setState` should update all the watched components that are added through the `subscribe` method.
+"watched" will be called in `[2]`. I.e., the functions that are watched in the `callbacks` set that are added through `subscribe` will be executed
+when `setState` is called because the `forEach` loop will update all the watched components that are added via the `subscribe` method.
 
-In `[2]`, the state will be altered depending on the type of parameter `setState` is called. If `setState` is called with a function in the brackets,
-then the `state` variable will be updated with a function; otherwise, the `state` variable will just be replaced with another value if the parameter
-is not a function.
+The purpose of `[3]` is to clean off the side effects before the corresponding component leaves the screen (such as through a page reload), where the
+clean-up funciton runs before the component is removed from the UI to prevent memory leaks. If a component is rendered multiple times, the previous
+effects will be cleaned off before the next effect.
 
-The expectation for `[3]` is that it will return an unsubscribe function. It is called when the snippet loads (so it will load four times); when
-this function is used without the `unsubscribe` part:
+References:
+[Hooks API](https://legacy.reactjs.org/docs/hooks-reference.html)
+[Hooks Effect](https://legacy.reactjs.org/docs/hooks-effect.html)
 
-```jsx
-store.subscribe(() => {
-  setState(selector(store.getState()));
-});
-```
-
-Then no values will be deleted, and the return statement would not be invoked. However, if `unsubscribe` is called as a return value, then the code
-segment will be executed. Think of `[3]` as, when called with a return value, a temporary method that will push the function callback into the `callbacks`
-set and removed once the component has finished loading. When the action is dispatched after the state was updated, the store subscription will become
-active, and remember to unsubscribe.
-
-Which can be used as:
+The `createStore` const above can be used as:
 
 ```jsx
 const store = createStore({ count: 0 });
@@ -220,6 +214,14 @@ const App = () => (
   </>
 );
 ```
+
+Each time the component is executed, the `useStore` hook will be called first, and then `callbacks.add(callback)` and `setState(store.getState()) // [1]`. This
+will be loaded each time the page is refreshed. If somehow the component is rendered twice (e.g., `strictMode` is on), then the two functions above will be run
+again once the side effects are eliminated (i.e., `callbacks.delete` --> `callbacks.add` and `setState`).
+
+Next, every time the function is invoked, the `setState(store.getState());` inside the unsubscribe function will be called, as the `useEffect` hook will be watching
+`store`, and will fire if `store` changes. After the component has unsubscribed, then the hook itself will fire (given that the component uses `setState`, which
+comes from `useStore`). This step will occur each time the "+1" button is clicked.
 
 ## Working with a Selector
 
