@@ -119,3 +119,15 @@ function Link({ children, config }) {
 ```
 
 ## Prop Drilling
+
+Passing down props through components (see "Micro State Management" on how to resolve this)
+
+```jsx
+function NavItem(props) {
+  return <AnimatedLink target={props.target} text='Some Text' />;
+}
+
+function AnimatedLink(props) {
+  return <a href={props.target}>{props.text}</a>;
+}
+```
