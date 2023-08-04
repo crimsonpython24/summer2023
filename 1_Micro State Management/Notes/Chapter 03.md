@@ -353,9 +353,9 @@ const App = () => (
 
 ```jsx
 type Action = { type: 'INC1' } | { type: 'INC2' };
-const Count1Context = createContext < number > 0;
-const Count2Context = createContext < number > 0;
-const DispatchContext = createContext < Dispatch < Action >> (() => {});
+const Count1Context = createContext(0);
+const Count2Context = createContext(0);
+const DispatchContext = createContext(() => {});
 ```
 
 If there are more counts, then there will be more contexts, but still only one `DispatchContext`
@@ -503,7 +503,7 @@ const App = () => (
 );
 ```
 
-### Factory Pattern with a Custom Hook (TypeScript-only)
+### Factory Pattern with a Custom Hook
 
 As creating a custom hook and provider component can be repetitive, one can write a function that does the task.
 
