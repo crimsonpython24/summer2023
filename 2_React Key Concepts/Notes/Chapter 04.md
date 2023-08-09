@@ -211,6 +211,29 @@ function CharCounter() {
 This code, namely the `numChars` constant, will automatically update because calling a state-updating function such as `setUserInput` will force
 React to re-evaluate the compoonent to which the state belongs to, simultaneously updating all the values inside `CharCounter`.
 
+However, note that one should not reference the current state to set a new state value, but instead use teh function form of the state updating
+function. I.e., from this:
+
+```jsx
+function emailEnteredHandler(event) {
+  setUserData({
+    email: event.target.value,
+    password: userData.password,
+  });
+}
+```
+
+Into this:
+
+```jsx
+function emailEnteredHandler(event) {
+  setUserData(prevData => ({
+    email: event.target.value,
+    password: prevData.password,
+  }));
+}
+```
+
 ## Working with Forms and Form Submission
 
 The `onSubmit` prop can be added to assign a function that will be executed once a form is submitted. For instance:

@@ -324,4 +324,4 @@ useEffect(function () {
 ## Rules of Hooks
 
 1. Only call hooks at the top level of component functions; do not call them inside `if` statments, loops, or nested functions
-2. Only call hooks inside of React componenets of custom Hooks
+2. Only call hooks inside of React components of custom Hooks
